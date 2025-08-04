@@ -50,19 +50,42 @@ const Room = () => {
     };
   }, []);
 
+  const bindPeerEvents = (targetSocketId: string, stream: MediaStream) => {
+    if (!peerRef.current) return;
+
+    peerRef.current.ontrack = (event) => {
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+      }
+    };
+
+    peerRef.current.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("ice-candidate", {
+          candidate: event.candidate,
+          targetSocketId,
+          roomName: id,
+        });
+      }
+    };
+  };
+
   const startCall = async (targetSocketId: string) => {
-    peerRef.current = new RTCPeerConnection(pcConfig);
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true,
     });
 
-    const offer = await peerRef.current?.createOffer();
-    await peerRef.current?.setLocalDescription(offer);
+    peerRef.current = new RTCPeerConnection(pcConfig);
+
+    bindPeerEvents(targetSocketId, stream);
 
     stream.getTracks().forEach((track) => {
       peerRef.current!.addTrack(track, stream);
     });
+
+    const offer = await peerRef.current?.createOffer();
+    await peerRef.current?.setLocalDescription(offer);
 
     socket.emit("offer", {
       targetSocketId,
@@ -76,21 +99,24 @@ const Room = () => {
     offer: RTCSessionDescriptionInit,
     senderSocketId: string
   ) => {
-    peerRef.current = new RTCPeerConnection(pcConfig);
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true,
     });
 
-    await peerRef.current.setRemoteDescription(
-      new RTCSessionDescription(offer)
-    );
+    peerRef.current = new RTCPeerConnection(pcConfig);
+
+    bindPeerEvents(senderSocketId, stream);
 
     stream.getTracks().forEach((track) => {
       peerRef.current!.addTrack(track, stream);
     });
 
     const answer = await peerRef.current.createAnswer();
+    await peerRef.current.setRemoteDescription(
+      new RTCSessionDescription(offer)
+    );
+
     await peerRef.current.setLocalDescription(answer);
 
     socket.emit("answer", {
