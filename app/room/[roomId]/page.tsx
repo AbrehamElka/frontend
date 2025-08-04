@@ -135,10 +135,11 @@ const Room = () => {
       peerRef.current!.addTrack(track, stream);
     });
 
-    const answer = await peerRef.current.createAnswer();
     await peerRef.current.setRemoteDescription(
       new RTCSessionDescription(offer)
     );
+
+    const answer = await peerRef.current.createAnswer();
 
     await peerRef.current.setLocalDescription(answer);
 
