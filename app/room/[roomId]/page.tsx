@@ -27,7 +27,7 @@ const Room = () => {
 
     socket.on("user-joined", async (data) => {
       console.log(data);
-      await startCall(data.targetSocketId);
+      await startCall(data.socketId);
     });
 
     socket.on("offer", async ({ offer, senderSocketId }) => {
@@ -76,6 +76,7 @@ const Room = () => {
         socket.emit("ice-candidate", {
           candidate: event.candidate,
           targetSocketId,
+          senderSocketId: socket.id,
           roomName: roomId,
         });
       }
