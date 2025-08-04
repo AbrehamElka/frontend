@@ -11,6 +11,10 @@ const pcConfig: RTCConfiguration = {
 const Room = () => {
   const { id } = useParams();
   const peerRef = useRef<RTCPeerConnection | null>(null);
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const targetSocketRef = useRef<string | null>(null);
+
   useEffect(() => {
     socket.connect();
 
@@ -27,7 +31,23 @@ const Room = () => {
       await createAnswer(offer, senderSocketId);
     });
 
-    socket.on("answer", () => {});
+    socket.on("answer", async ({ answer }) => {
+      await peerRef.current?.setRemoteDescription(
+        new RTCSessionDescription(answer)
+      );
+    });
+
+    socket.on("ice-candidate", async ({ candidate }) => {
+      try {
+        await peerRef.current?.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.error("Failed to add ICE candidate", e);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const startCall = async (targetSocketId: string) => {
@@ -40,6 +60,10 @@ const Room = () => {
     const offer = await peerRef.current?.createOffer();
     await peerRef.current?.setLocalDescription(offer);
 
+    stream.getTracks().forEach((track) => {
+      peerRef.current!.addTrack(track, stream);
+    });
+
     socket.emit("offer", {
       targetSocketId,
       offer,
@@ -47,6 +71,7 @@ const Room = () => {
       roomName: id,
     });
   };
+
   const createAnswer = async (
     offer: RTCSessionDescriptionInit,
     senderSocketId: string
@@ -61,12 +86,16 @@ const Room = () => {
       new RTCSessionDescription(offer)
     );
 
+    stream.getTracks().forEach((track) => {
+      peerRef.current!.addTrack(track, stream);
+    });
+
     const answer = await peerRef.current.createAnswer();
     await peerRef.current.setLocalDescription(answer);
 
     socket.emit("answer", {
       senderSocketId,
-      offer: answer,
+      answer: answer,
       targetSocketId: senderSocketId,
       roomName: id,
     });
