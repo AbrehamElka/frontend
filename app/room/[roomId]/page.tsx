@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import socket from "@/lib/socket";
 
@@ -9,17 +9,20 @@ const pcConfig: RTCConfiguration = {
 };
 
 const Room = () => {
-  const { id } = useParams();
+  const { roomId } = useParams();
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const targetSocketRef = useRef<string | null>(null);
+  const [isSocketConnected, setSocketConnected] = useState(false);
 
   useEffect(() => {
-    socket.connect();
+    if (!socket.connected) {
+      socket.connect();
+    }
 
     socket.on("connect", () => {
-      socket.emit("join-room", { roomId: id, userId: "123" });
+      setSocketConnected(true);
     });
 
     socket.on("user-joined", async (data) => {
@@ -50,6 +53,15 @@ const Room = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (roomId && isSocketConnected) {
+      socket.emit("join-room", {
+        roomId: roomId,
+        userId: "123", // replace with real user ID
+      });
+    }
+  }, [roomId, isSocketConnected]);
+
   const bindPeerEvents = (targetSocketId: string, stream: MediaStream) => {
     if (!peerRef.current) return;
 
@@ -64,7 +76,7 @@ const Room = () => {
         socket.emit("ice-candidate", {
           candidate: event.candidate,
           targetSocketId,
-          roomName: id,
+          roomName: roomId,
         });
       }
     };
@@ -75,6 +87,11 @@ const Room = () => {
       video: true,
       audio: true,
     });
+
+    // Set local video stream
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
 
     peerRef.current = new RTCPeerConnection(pcConfig);
 
@@ -91,7 +108,7 @@ const Room = () => {
       targetSocketId,
       offer,
       senderSocketId: socket.id,
-      roomName: id,
+      roomName: roomId,
     });
   };
 
@@ -103,6 +120,11 @@ const Room = () => {
       video: true,
       audio: true,
     });
+
+    // Set local video stream
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
+    }
 
     peerRef.current = new RTCPeerConnection(pcConfig);
 
@@ -123,11 +145,39 @@ const Room = () => {
       senderSocketId,
       answer: answer,
       targetSocketId: senderSocketId,
-      roomName: id,
+      roomName: roomId,
     });
   };
 
-  return <div>Room {id}</div>;
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Local Video</h3>
+          <video
+            ref={localVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-64 bg-gray-900 rounded-lg"
+          />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Remote Video</h3>
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="w-full h-64 bg-gray-900 rounded-lg"
+          />
+        </div>
+      </div>
+      <div className="text-center">
+        <p>Room ID: {roomId}</p>
+        <p>Socket Connected: {isSocketConnected ? "Yes" : "No"}</p>
+      </div>
+    </div>
+  );
 };
 
 export default Room;
