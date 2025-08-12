@@ -10,12 +10,6 @@ import { z } from "zod";
 import prisma from "@/lib/prisma";
 
 const credentialsSchema = z.object({
-  name: z
-    .string()
-    .min(3, "Username must be at least 3 characters.")
-    .max(50, "Username too long.")
-    .trim(),
-
   email: z.string().email("Invalid email address.").trim(),
   password: z
     .string()
