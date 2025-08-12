@@ -65,6 +65,7 @@ export default function SignupPage() {
       } else {
         router.push("/"); // Redirect to home page on success
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.message);
     } finally {
