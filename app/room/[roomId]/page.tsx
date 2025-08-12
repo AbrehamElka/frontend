@@ -175,7 +175,7 @@ const Room = () => {
         </div>
       </div>
       <div className="text-center">
-        <p>Room ID: {roomId}</p>
+        <p>Room ID : {roomId}</p>
         <p>Socket Connected: {isSocketConnected ? "Yes" : "No"}</p>
       </div>
     </div>
