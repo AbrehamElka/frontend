@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import socket from "@/lib/socket";
 import { useSession } from "next-auth/react";
@@ -24,6 +24,108 @@ const Room = () => {
   const [isRemoteVideoReady, setIsRemoteVideoReady] = useState(false);
 
   const user = session?.user;
+
+  // Bind peer events
+  const bindPeerEvents = useCallback((targetSocketId: string) => {
+    if (!peerRef.current) return;
+
+    peerRef.current.ontrack = (event) => {
+      console.log("[Peer] Received remote track:", event.streams[0]);
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = event.streams[0];
+        setIsRemoteVideoReady(true);
+      }
+    };
+
+    peerRef.current.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log("[Peer] Sending ICE candidate to:", targetSocketId);
+        socket.emit("ice-candidate", {
+          candidate: event.candidate,
+          targetSocketId,
+          senderSocketId: socket.id,
+        });
+      }
+    };
+
+    peerRef.current.onconnectionstatechange = () => {
+      console.log("[Peer] Connection state:", peerRef.current?.connectionState);
+    };
+
+    peerRef.current.oniceconnectionstatechange = () => {
+      console.log(
+        "[Peer] ICE connection state:",
+        peerRef.current?.iceConnectionState
+      );
+    };
+  }, []);
+
+  // Start a call
+  const startCall = useCallback(
+    async (targetSocketId: string) => {
+      if (!localStreamRef.current) {
+        console.error("Local stream not ready");
+        return;
+      }
+
+      console.log("[Call] Starting call with:", targetSocketId);
+      targetSocketRef.current = targetSocketId;
+
+      if (!peerRef.current) {
+        peerRef.current = new RTCPeerConnection(pcConfig);
+        bindPeerEvents(targetSocketId);
+        localStreamRef.current.getTracks().forEach((track) => {
+          peerRef.current!.addTrack(track, localStreamRef.current!);
+        });
+      }
+
+      const offer = await peerRef.current.createOffer();
+      await peerRef.current.setLocalDescription(offer);
+
+      socket.emit("offer", {
+        targetSocketId,
+        offer,
+        senderSocketId: socket.id,
+        roomName: roomId,
+      });
+    },
+    [bindPeerEvents, roomId]
+  );
+
+  // Create answer to an incoming offer
+  const createAnswer = useCallback(
+    async (offer: RTCSessionDescriptionInit, senderSocketId: string) => {
+      if (!localStreamRef.current) {
+        console.error("Local stream not ready");
+        return;
+      }
+
+      console.log("[Call] Creating answer for:", senderSocketId);
+      targetSocketRef.current = senderSocketId;
+
+      if (!peerRef.current) {
+        peerRef.current = new RTCPeerConnection(pcConfig);
+        bindPeerEvents(senderSocketId);
+        localStreamRef.current.getTracks().forEach((track) => {
+          peerRef.current!.addTrack(track, localStreamRef.current!);
+        });
+      }
+
+      await peerRef.current.setRemoteDescription(
+        new RTCSessionDescription(offer)
+      );
+      const answer = await peerRef.current.createAnswer();
+      await peerRef.current.setLocalDescription(answer);
+
+      socket.emit("answer", {
+        senderSocketId: socket.id,
+        answer,
+        targetSocketId: senderSocketId,
+        roomName: roomId,
+      });
+    },
+    [bindPeerEvents, roomId]
+  );
 
   // Initialize local video
   useEffect(() => {
@@ -119,7 +221,7 @@ const Room = () => {
       socket.off("ice-candidate", handleIceCandidate);
       socket.disconnect();
     };
-  }, []);
+  }, [startCall, createAnswer]);
 
   // Join room when socket is ready
   useEffect(() => {
@@ -139,105 +241,6 @@ const Room = () => {
       </div>
     );
   }
-
-  // Bind peer events
-  const bindPeerEvents = (targetSocketId: string) => {
-    if (!peerRef.current) return;
-
-    peerRef.current.ontrack = (event) => {
-      console.log("[Peer] Received remote track:", event.streams[0]);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = event.streams[0];
-        setIsRemoteVideoReady(true);
-      }
-    };
-
-    peerRef.current.onicecandidate = (event) => {
-      if (event.candidate) {
-        console.log("[Peer] Sending ICE candidate to:", targetSocketId);
-        socket.emit("ice-candidate", {
-          candidate: event.candidate,
-          targetSocketId,
-          senderSocketId: socket.id,
-        });
-      }
-    };
-
-    peerRef.current.onconnectionstatechange = () => {
-      console.log("[Peer] Connection state:", peerRef.current?.connectionState);
-    };
-
-    peerRef.current.oniceconnectionstatechange = () => {
-      console.log(
-        "[Peer] ICE connection state:",
-        peerRef.current?.iceConnectionState
-      );
-    };
-  };
-
-  // Start a call
-  const startCall = async (targetSocketId: string) => {
-    if (!localStreamRef.current) {
-      console.error("Local stream not ready");
-      return;
-    }
-
-    console.log("[Call] Starting call with:", targetSocketId);
-    targetSocketRef.current = targetSocketId;
-
-    if (!peerRef.current) {
-      peerRef.current = new RTCPeerConnection(pcConfig);
-      bindPeerEvents(targetSocketId);
-      localStreamRef.current.getTracks().forEach((track) => {
-        peerRef.current!.addTrack(track, localStreamRef.current!);
-      });
-    }
-
-    const offer = await peerRef.current.createOffer();
-    await peerRef.current.setLocalDescription(offer);
-
-    socket.emit("offer", {
-      targetSocketId,
-      offer,
-      senderSocketId: socket.id,
-      roomName: roomId,
-    });
-  };
-
-  // Create answer to an incoming offer
-  const createAnswer = async (
-    offer: RTCSessionDescriptionInit,
-    senderSocketId: string
-  ) => {
-    if (!localStreamRef.current) {
-      console.error("Local stream not ready");
-      return;
-    }
-
-    console.log("[Call] Creating answer for:", senderSocketId);
-    targetSocketRef.current = senderSocketId;
-
-    if (!peerRef.current) {
-      peerRef.current = new RTCPeerConnection(pcConfig);
-      bindPeerEvents(senderSocketId);
-      localStreamRef.current.getTracks().forEach((track) => {
-        peerRef.current!.addTrack(track, localStreamRef.current!);
-      });
-    }
-
-    await peerRef.current.setRemoteDescription(
-      new RTCSessionDescription(offer)
-    );
-    const answer = await peerRef.current.createAnswer();
-    await peerRef.current.setLocalDescription(answer);
-
-    socket.emit("answer", {
-      senderSocketId: socket.id,
-      answer,
-      targetSocketId: senderSocketId,
-      roomName: roomId,
-    });
-  };
 
   return (
     <div className="bg-gray-950 min-h-screen text-white p-4 sm:p-8 flex flex-col items-center justify-center font-sans antialiased">
