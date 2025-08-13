@@ -226,16 +226,18 @@ const Room = () => {
             <h3 className="text-xl font-bold mb-2 text-purple-300">
               Remote Video
             </h3>
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 ease-in-out transform hover:scale-105">
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl">
               <video
                 ref={remoteVideoRef}
                 autoPlay
                 playsInline
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gray-800 flex items-center justify-center text-gray-500 text-lg">
-                Loading Remote Video...
-              </div>
+              {!isRemoteVideoReady && (
+                <div className="absolute inset-0 bg-gray-800 flex items-center justify-center text-gray-500 text-lg">
+                  Loading Remote Video...
+                </div>
+              )}
             </div>
           </div>
         </div>
