@@ -37,7 +37,6 @@ const Room = () => {
           localVideoRef.current.srcObject = stream;
           setIsLocalVideoReady(true);
         }
-        console.log("[Local] Preview stream ready");
       } catch (err) {
         console.error("[Local] Failed to get media:", err);
       }
@@ -118,72 +117,43 @@ const Room = () => {
       }
     };
   };
-
   const startCall = async (targetSocketId: string) => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-
-    // Set local video stream
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
-
+    targetSocketRef.current = targetSocketId;
+    const stream = localStreamRef.current!;
     peerRef.current = new RTCPeerConnection(pcConfig);
-
     bindPeerEvents(targetSocketId, stream);
+    stream
+      .getTracks()
+      .forEach((track) => peerRef.current!.addTrack(track, stream));
 
-    stream.getTracks().forEach((track) => {
-      peerRef.current!.addTrack(track, stream);
-    });
+    const offer = await peerRef.current.createOffer();
+    await peerRef.current.setLocalDescription(offer);
 
-    const offer = await peerRef.current?.createOffer();
-    await peerRef.current?.setLocalDescription(offer);
-
-    socket.emit("offer", {
-      targetSocketId,
-      offer,
-      senderSocketId: socket.id,
-      roomName: roomId,
-    });
+    socket.emit("offer", { targetSocketId, offer, senderSocketId: socket.id });
   };
 
   const createAnswer = async (
     offer: RTCSessionDescriptionInit,
     senderSocketId: string
   ) => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-
-    // Set local video stream
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
-
+    targetSocketRef.current = senderSocketId;
+    const stream = localStreamRef.current!;
     peerRef.current = new RTCPeerConnection(pcConfig);
-
     bindPeerEvents(senderSocketId, stream);
-
-    stream.getTracks().forEach((track) => {
-      peerRef.current!.addTrack(track, stream);
-    });
+    stream
+      .getTracks()
+      .forEach((track) => peerRef.current!.addTrack(track, stream));
 
     await peerRef.current.setRemoteDescription(
       new RTCSessionDescription(offer)
     );
-
     const answer = await peerRef.current.createAnswer();
-
     await peerRef.current.setLocalDescription(answer);
 
     socket.emit("answer", {
       senderSocketId: socket.id,
-      answer: answer,
+      answer,
       targetSocketId: senderSocketId,
-      roomName: roomId,
     });
   };
 
