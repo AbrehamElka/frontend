@@ -104,6 +104,7 @@ const Room = () => {
     peerRef.current.ontrack = (event) => {
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = event.streams[0];
+        setIsRemoteVideoReady(true);
       }
     };
 
