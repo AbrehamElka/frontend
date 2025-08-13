@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import socket from "@/lib/socket";
 import { useSession } from "next-auth/react";
+import { Copy } from "lucide-react";
 
 const pcConfig: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -22,8 +23,30 @@ const Room = () => {
   const [isSocketConnected, setSocketConnected] = useState(false);
   const [isLocalVideoReady, setIsLocalVideoReady] = useState(false);
   const [isRemoteVideoReady, setIsRemoteVideoReady] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const user = session?.user;
+
+  const handleCopy = async () => {
+    const roomUrl = `${window.location.origin}/room/${roomId}`;
+
+    try {
+      await navigator.clipboard.writeText(roomUrl);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy URL:", err);
+      // Fallback for older browsers
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = roomUrl;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempTextArea);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
 
   // Bind peer events
   const bindPeerEvents = useCallback((targetSocketId: string) => {
@@ -295,6 +318,27 @@ const Room = () => {
               ></div>
               Remote Video: {isRemoteVideoReady ? "Connected" : "Waiting..."}
             </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-800 p-4 rounded-xl shadow-inner border border-gray-700">
+          <p className="text-gray-400 font-medium">Room ID</p>
+          <div className="flex items-center gap-2">
+            <span className="text-purple-300 font-bold text-lg">
+              {window.location.origin}/room/{roomId || "N/A"}
+            </span>
+            <button
+              onClick={handleCopy}
+              className="p-2 rounded-full bg-purple-700 hover:bg-purple-600 transition-colors duration-200"
+              aria-label="Copy room URL"
+            >
+              <Copy size={20} className="text-white" />
+            </button>
+            {isCopied && (
+              <span className="text-green-400 text-sm font-semibold">
+                Copied!
+              </span>
+            )}
           </div>
         </div>
 
