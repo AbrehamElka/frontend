@@ -2,10 +2,24 @@
 
 import React from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
+const generateRoomString = () => {
+  const parts = [];
+  // Generates a random string of 3 characters
+  const generatePart = () => Math.random().toString(36).substring(2, 5);
+
+  parts.push(generatePart());
+  parts.push(generatePart());
+  parts.push(generatePart());
+
+  return parts.join("-");
+};
 
 const Room = () => {
   // Use the useSession hook to get session data and status
   const { data: session, status } = useSession();
+  const router = useRouter();
 
   // Show a loading state while the session is being fetched
   if (status === "loading") {
@@ -25,6 +39,13 @@ const Room = () => {
     );
   }
 
+  const handleCreateRoom = () => {
+    // Generate a new room ID
+    const newRoomId = generateRoomString();
+    // Redirect to the new room's dynamic URL
+    router.push(`/room/${newRoomId}`);
+  };
+
   // Access the user's email from the session object
   const user = session.user;
 
@@ -39,7 +60,10 @@ const Room = () => {
           Welcome to the Room
         </h1>
         <p className="text-white">User Email: {user?.email}</p>
-        <button className="bg-white text-purple-500 w-full py-2 rounded-lg hover:bg-purple-600 transition-colors duration-200 mt-4">
+        <button
+          onClick={handleCreateRoom}
+          className="bg-white text-purple-500 w-full py-2 rounded-lg hover:bg-purple-600 transition-colors duration-200 mt-4"
+        >
           Create New Room
         </button>
       </div>
