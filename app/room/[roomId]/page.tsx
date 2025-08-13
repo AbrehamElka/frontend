@@ -11,17 +11,35 @@ const pcConfig: RTCConfiguration = {
 
 const Room = () => {
   const { roomId } = useParams();
+  const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white">
+        <p>Loading session...</p>
+      </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white">
+        <p>Please sign in to view this page.</p>
+      </div>
+    );
+  }
+
+  const localStreamRef = useRef<MediaStream | null>(null);
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const targetSocketRef = useRef<string | null>(null);
-  const [isSocketConnected, setSocketConnected] = useState(false);
 
+  const [isSocketConnected, setSocketConnected] = useState(false);
   const [isLocalVideoReady, setIsLocalVideoReady] = useState(false);
   const [isRemoteVideoReady, setIsRemoteVideoReady] = useState(false);
 
-  const { data: session, status } = useSession();
-  const localStreamRef = useRef<MediaStream | null>(null);
+  const user = session?.user;
 
   useEffect(() => {
     (async () => {
@@ -87,7 +105,6 @@ const Room = () => {
     );
   }
 
-  const user = session.user;
   useEffect(() => {
     if (roomId && isSocketConnected) {
       socket.emit("join-room", {
