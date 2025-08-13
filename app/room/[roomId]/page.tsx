@@ -49,10 +49,16 @@ const Room = () => {
   useEffect(() => {
     if (!socket.connected) socket.connect();
 
-    const handleConnect = () => setSocketConnected(true);
+    const handleConnect = () => {
+      setSocketConnected(true);
+      console.log("[Socket] Connected with ID:", socket.id);
+    };
 
-    const handleUserJoined = async (data: { socketId: string }) => {
-      console.log("User joined:", data);
+    const handleUserJoined = async (data: {
+      socketId: string;
+      userId: string;
+    }) => {
+      console.log("[Socket] User joined:", data);
       await startCall(data.socketId);
     };
 
@@ -63,14 +69,18 @@ const Room = () => {
       offer: RTCSessionDescriptionInit;
       senderSocketId: string;
     }) => {
+      console.log("[Socket] Received offer from:", senderSocketId);
       await createAnswer(offer, senderSocketId);
     };
 
     const handleAnswer = async ({
       answer,
+      senderSocketId,
     }: {
       answer: RTCSessionDescriptionInit;
+      senderSocketId: string;
     }) => {
+      console.log("[Socket] Received answer from:", senderSocketId);
       if (peerRef.current) {
         await peerRef.current.setRemoteDescription(
           new RTCSessionDescription(answer)
@@ -80,9 +90,12 @@ const Room = () => {
 
     const handleIceCandidate = async ({
       candidate,
+      senderSocketId,
     }: {
       candidate: RTCIceCandidateInit;
+      senderSocketId: string;
     }) => {
+      console.log("[Socket] Received ICE candidate from:", senderSocketId);
       if (peerRef.current && candidate) {
         try {
           await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
@@ -111,6 +124,7 @@ const Room = () => {
   // Join room when socket is ready
   useEffect(() => {
     if (roomId && isSocketConnected) {
+      console.log("[Room] Joining room:", roomId, "with user:", user?.name);
       socket.emit("join-room", {
         roomId,
         userId: user?.name,
@@ -131,6 +145,7 @@ const Room = () => {
     if (!peerRef.current) return;
 
     peerRef.current.ontrack = (event) => {
+      console.log("[Peer] Received remote track:", event.streams[0]);
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = event.streams[0];
         setIsRemoteVideoReady(true);
@@ -139,12 +154,24 @@ const Room = () => {
 
     peerRef.current.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log("[Peer] Sending ICE candidate to:", targetSocketId);
         socket.emit("ice-candidate", {
           candidate: event.candidate,
           targetSocketId,
           senderSocketId: socket.id,
         });
       }
+    };
+
+    peerRef.current.onconnectionstatechange = () => {
+      console.log("[Peer] Connection state:", peerRef.current?.connectionState);
+    };
+
+    peerRef.current.oniceconnectionstatechange = () => {
+      console.log(
+        "[Peer] ICE connection state:",
+        peerRef.current?.iceConnectionState
+      );
     };
   };
 
@@ -155,6 +182,7 @@ const Room = () => {
       return;
     }
 
+    console.log("[Call] Starting call with:", targetSocketId);
     targetSocketRef.current = targetSocketId;
 
     if (!peerRef.current) {
@@ -168,7 +196,12 @@ const Room = () => {
     const offer = await peerRef.current.createOffer();
     await peerRef.current.setLocalDescription(offer);
 
-    socket.emit("offer", { targetSocketId, offer, senderSocketId: socket.id });
+    socket.emit("offer", {
+      targetSocketId,
+      offer,
+      senderSocketId: socket.id,
+      roomName: roomId,
+    });
   };
 
   // Create answer to an incoming offer
@@ -181,6 +214,7 @@ const Room = () => {
       return;
     }
 
+    console.log("[Call] Creating answer for:", senderSocketId);
     targetSocketRef.current = senderSocketId;
 
     if (!peerRef.current) {
@@ -201,6 +235,7 @@ const Room = () => {
       senderSocketId: socket.id,
       answer,
       targetSocketId: senderSocketId,
+      roomName: roomId,
     });
   };
 
@@ -214,6 +249,50 @@ const Room = () => {
           <p className="text-gray-400 text-lg">
             A seamless connection, in style.
           </p>
+          <div className="mt-4 space-y-2">
+            <div
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isSocketConnected
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-red-500/20 text-red-400"
+              }`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full mr-2 ${
+                  isSocketConnected ? "bg-green-400" : "bg-red-400"
+                }`}
+              ></div>
+              Socket: {isSocketConnected ? "Connected" : "Disconnected"}
+            </div>
+            <div
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isLocalVideoReady
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-yellow-500/20 text-yellow-400"
+              }`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full mr-2 ${
+                  isLocalVideoReady ? "bg-green-400" : "bg-yellow-400"
+                }`}
+              ></div>
+              Local Video: {isLocalVideoReady ? "Ready" : "Loading..."}
+            </div>
+            <div
+              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                isRemoteVideoReady
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-gray-500/20 text-gray-400"
+              }`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full mr-2 ${
+                  isRemoteVideoReady ? "bg-green-400" : "bg-gray-400"
+                }`}
+              ></div>
+              Remote Video: {isRemoteVideoReady ? "Connected" : "Waiting..."}
+            </div>
+          </div>
         </div>
 
         {/* Video grid */}
