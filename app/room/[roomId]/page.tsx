@@ -13,22 +13,6 @@ const Room = () => {
   const { roomId } = useParams();
   const { data: session, status } = useSession();
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white">
-        <p>Loading session...</p>
-      </div>
-    );
-  }
-
-  if (status === "unauthenticated") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white">
-        <p>Please sign in to view this page.</p>
-      </div>
-    );
-  }
-
   const localStreamRef = useRef<MediaStream | null>(null);
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -97,6 +81,15 @@ const Room = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (roomId && isSocketConnected) {
+      socket.emit("join-room", {
+        roomId: roomId,
+        userId: user?.name,
+      });
+    }
+  }, [roomId, isSocketConnected]);
+
   if (!session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -104,15 +97,6 @@ const Room = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (roomId && isSocketConnected) {
-      socket.emit("join-room", {
-        roomId: roomId,
-        userId: user?.name, // replace with real user ID
-      });
-    }
-  }, [roomId, isSocketConnected]);
 
   const bindPeerEvents = (targetSocketId: string, stream: MediaStream) => {
     if (!peerRef.current) return;
@@ -129,7 +113,6 @@ const Room = () => {
           candidate: event.candidate,
           targetSocketId,
           senderSocketId: socket.id,
-          roomName: roomId,
         });
       }
     };
@@ -196,7 +179,7 @@ const Room = () => {
     await peerRef.current.setLocalDescription(answer);
 
     socket.emit("answer", {
-      senderSocketId,
+      senderSocketId: socket.id,
       answer: answer,
       targetSocketId: senderSocketId,
       roomName: roomId,
