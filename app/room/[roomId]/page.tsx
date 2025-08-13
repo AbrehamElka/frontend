@@ -212,7 +212,8 @@ const Room = () => {
             <p className="text-purple-300 font-bold text-lg">
               <span>
                 {" "}
-                https://frontend-kappa-navy-15.vercel.app/{roomId || "N/A"}{" "}
+                https://frontend-kappa-navy-15.vercel.app/room/{roomId ||
+                  "N/A"}{" "}
               </span>
             </p>
           </div>
