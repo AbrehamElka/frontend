@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import socket from "@/lib/socket";
+import { useSession } from "next-auth/react";
 
 const pcConfig: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -15,6 +16,31 @@ const Room = () => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const targetSocketRef = useRef<string | null>(null);
   const [isSocketConnected, setSocketConnected] = useState(false);
+
+  const [isLocalVideoReady, setIsLocalVideoReady] = useState(false);
+  const [isRemoteVideoReady, setIsRemoteVideoReady] = useState(false);
+
+  const { data: session, status } = useSession();
+  const localStreamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        localStreamRef.current = stream;
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+          setIsLocalVideoReady(true);
+        }
+        console.log("[Local] Preview stream ready");
+      } catch (err) {
+        console.error("[Local] Failed to get media:", err);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (!socket.connected) {
@@ -53,11 +79,20 @@ const Room = () => {
     };
   }, []);
 
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-white">Please sign in to view this page.</p>
+      </div>
+    );
+  }
+
+  const user = session.user;
   useEffect(() => {
     if (roomId && isSocketConnected) {
       socket.emit("join-room", {
         roomId: roomId,
-        userId: "123", // replace with real user ID
+        userId: user?.name, // replace with real user ID
       });
     }
   }, [roomId, isSocketConnected]);
