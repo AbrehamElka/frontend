@@ -46,6 +46,16 @@ export default function SignInPage() {
         >
           Sign In
         </button>
+
+        <div className="flex items-center justify-center space-x-2 mt-4 text-sm">
+          <span className="text-gray-600">Creat an account?</span>
+          <a
+            href="/signup"
+            className="text-purple-600 font-semibold hover:text-purple-800 transition-colors duration-200"
+          >
+            Sign Up
+          </a>
+        </div>
       </div>
     </div>
   );

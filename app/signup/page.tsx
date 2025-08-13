@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-
+import Link from "next/link";
 export default function SignupPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -110,6 +110,16 @@ export default function SignupPage() {
           >
             {loading ? "Signing Up..." : "Sign Up"}
           </button>
+
+          <div className="flex items-center justify-center space-x-2 mt-4 text-sm">
+            <span className="text-gray-600">Already have an account?</span>
+            <a
+              href="/signin"
+              className="text-purple-600 font-semibold hover:text-purple-800 transition-colors duration-200"
+            >
+              Sign In
+            </a>
+          </div>
         </form>
 
         {error && (
