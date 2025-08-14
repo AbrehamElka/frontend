@@ -311,14 +311,14 @@ const Room = () => {
   }
 
   return (
-    <div className="bg-gray-950 min-h-screen text-white flex flex-col font-sans antialiased">
+    <div className="min-h-screen text-white flex flex-col font-sans bg-cover bg-center bg-no-repeat bg-[url('/background.jpg')]">
       {/* Page Title */}
       <h1 className="text-center text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 py-6 drop-shadow-lg">
         Google Meet Clone
       </h1>
 
       {/* Video Container */}
-      <div className="relative flex-1 flex items-center justify-center bg-black p-6">
+      <div className="relative flex-1 flex items-center justify-center  p-6">
         {/* Remote Video */}
         <div className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
           <video
