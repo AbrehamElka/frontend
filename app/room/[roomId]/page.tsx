@@ -4,7 +4,16 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import socket from "@/lib/socket";
 import { useSession } from "next-auth/react";
-import { Copy, PhoneOff, Mic, MicOff, Video, VideoOff } from "lucide-react";
+import {
+  Copy,
+  PhoneOff,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  Info,
+  X,
+} from "lucide-react";
 
 const pcConfig: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -25,6 +34,7 @@ const Room = () => {
   const [isLocalVideoReady, setIsLocalVideoReady] = useState(false);
   const [isRemoteVideoReady, setIsRemoteVideoReady] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [showRoomInfo, setShowRoomInfo] = useState(false);
 
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
@@ -314,30 +324,29 @@ const Room = () => {
   }
 
   return (
-    <div className="min-h-screen text-white flex flex-col font-sans bg-cover bg-center bg-no-repeat bg-[url('/background.jpg')] bg-fixed">
+    <div className="min-h-screen text-white flex flex-col font-sans bg-cover bg-center bg-no-repeat bg-[url('/background.jpg')] bg-fixed px-2 sm:px-6">
       {/* Page Title */}
-      <h1 className="text-center text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 py-6 drop-shadow-lg">
+      <h1 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 py-4 sm:py-6 drop-shadow-lg">
         Google Meet Clone
       </h1>
 
-      <div className="relative flex-1 flex items-center justify-center  p-6">
+      <div className="relative flex-1 flex items-center justify-center p-2 sm:p-6">
         {/* Remote Video */}
-
-        <div className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl">
+        <div className="relative w-full max-w-5xl h-[600px] sm:h-[500px] md:h-[600px] rounded-2xl overflow-hidden shadow-2xl">
           <video
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="w-full h-full object-cover rounded-2xl "
+            className="w-full h-full object-cover rounded-2xl"
           />
           {!isRemoteVideoReady && (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-lg rounded-2xl bg-gray-900/50 backdrop-blur-sm">
+            <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-base sm:text-lg rounded-2xl bg-gray-900/50 backdrop-blur-sm">
               Waiting for remote video...
             </div>
           )}
 
           {/* Local Video Overlay */}
-          <div className="absolute bottom-4 right-4 w-48 aspect-video rounded-xl overflow-hidden shadow-lg border-2 border-purple-500/70">
+          <div className="absolute bottom-4 right-2 sm:right-4 w-32 sm:w-48 aspect-video rounded-xl overflow-hidden shadow-lg border-2 border-purple-500/70">
             <video
               ref={localVideoRef}
               autoPlay
@@ -346,70 +355,98 @@ const Room = () => {
               className="w-full h-full object-cover"
             />
             {!isLocalVideoReady && (
-              <div className="absolute inset-0 bg-gray-800 flex items-center justify-center text-gray-400 text-sm">
+              <div className="absolute inset-0 bg-gray-800 flex items-center justify-center text-gray-400 text-xs sm:text-sm">
                 Loading...
               </div>
             )}
           </div>
 
           {/* Name tag */}
-          <div className="absolute top-8 left-8 bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg shadow-lg border border-purple-500/50">
-            <span className="text-white font-semibold text-lg tracking-wide">
+          <div className="absolute top-4 sm:top-8 left-2 sm:left-8 bg-black/50 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-2 rounded-lg shadow-lg border border-purple-500/50">
+            <span className="text-white font-semibold text-sm sm:text-lg tracking-wide">
               {remotePersonName ? remotePersonName : "Name"}
             </span>
           </div>
 
           {/* Floating Control Buttons (Top Center) */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4 bg-black/40 backdrop-blur-md p-3 rounded-full shadow-lg">
+          <div className="absolute top-2 sm:top-4 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-4 bg-black/40 backdrop-blur-md p-2 sm:p-3 rounded-full shadow-lg">
             <button
               onClick={handleEndCall}
-              className="p-4 bg-red-600 rounded-full text-white shadow-lg hover:scale-110 hover:bg-red-700 transition-all duration-200"
+              className="p-3 sm:p-4 bg-red-600 rounded-full text-white shadow-lg hover:scale-110 hover:bg-red-700 transition-all duration-200"
               aria-label="End Call"
             >
-              <PhoneOff size={22} />
+              <PhoneOff size={20} />
             </button>
             <button
               onClick={handleMute}
-              className={`p-4 rounded-full text-white shadow-lg hover:scale-110 transition-all duration-200 ${
+              className={`p-3 sm:p-4 rounded-full text-white shadow-lg hover:scale-110 transition-all duration-200 ${
                 isMuted
                   ? "bg-blue-600 hover:bg-blue-700"
                   : "bg-gray-700 hover:bg-gray-800"
               }`}
               aria-label={isMuted ? "Unmute" : "Mute"}
             >
-              {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
+              {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
             </button>
             <button
               onClick={handleToggleCamera}
-              className={`p-4 rounded-full text-white shadow-lg hover:scale-110 transition-all duration-200 ${
+              className={`p-3 sm:p-4 rounded-full text-white shadow-lg hover:scale-110 transition-all duration-200 ${
                 isCameraOff
                   ? "bg-purple-600 hover:bg-purple-700"
                   : "bg-gray-700 hover:bg-gray-800"
               }`}
               aria-label={isCameraOff ? "Turn camera on" : "Turn camera off"}
             >
-              {isCameraOff ? <VideoOff size={22} /> : <Video size={22} />}
+              {isCameraOff ? <VideoOff size={20} /> : <Video size={20} />}
             </button>
           </div>
 
           {/* Room Info (Bottom Center Overlay) */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full shadow-lg">
-            <span className="text-purple-300 font-bold text-lg">
-              Code: {roomId}
-            </span>
-            <button
-              onClick={handleCopy}
-              className="p-2 rounded-full bg-purple-700 hover:bg-purple-600 transition-colors duration-200"
-              aria-label="Copy room URL"
-            >
-              <Copy size={18} className="text-white" />
-            </button>
-            {isCopied && (
-              <span className="text-green-400 text-sm font-semibold">
-                Copied!
-              </span>
-            )}
+          <div className="hidden sm:flex absolute bottom-2  sm:bottom-4 left-1/2 -translate-x-1/2  flex-col sm:flex-row items-center gap-1 sm:gap-3 bg-black/40 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-2 rounded-full shadow-lg text-sm sm:text-base">
+            <span className="text-purple-300 font-bold">Code: {roomId}</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCopy}
+                className="p-2 rounded-full bg-purple-700 hover:bg-purple-600 transition-colors duration-200"
+                aria-label="Copy room URL"
+              >
+                <Copy size={16} />
+              </button>
+              {isCopied && (
+                <span className="text-green-400 font-semibold text-xs sm:text-sm">
+                  Copied!
+                </span>
+              )}
+            </div>
           </div>
+
+          {/* Toggle Button for small screens */}
+          <button
+            className="sm:hidden absolute bottom-4 left-4 bg-purple-700 hover:bg-purple-600 text-white p-3 rounded-full shadow-lg transition-transform duration-200"
+            onClick={() => setShowRoomInfo(!showRoomInfo)}
+            aria-label="Toggle room info"
+          >
+            {showRoomInfo ? <X size={20} /> : <Info size={20} />}
+          </button>
+
+          {/* Room Info for small screens */}
+          {showRoomInfo && (
+            <div className="sm:hidden absolute bottom-16 left-4 flex flex-col items-start gap-2 bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg shadow-lg text-sm text-white">
+              <span className="text-purple-300 font-bold">Code: {roomId}</span>
+              <button
+                onClick={handleCopy}
+                className="p-2 rounded-full bg-purple-700 hover:bg-purple-600 transition-colors duration-200"
+                aria-label="Copy room URL"
+              >
+                <Copy size={16} />
+              </button>
+              {isCopied && (
+                <span className="text-green-400 font-semibold text-xs">
+                  Copied!
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

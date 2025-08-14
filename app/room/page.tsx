@@ -51,52 +51,52 @@ const Room = () => {
   const user = session.user;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center bg-no-repeat bg-[url('/background_1.jpg')]">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-cover bg-center bg-no-repeat bg-[url('/background_1.jpg')] px-4">
       {/* Title Section */}
-      <div className="text-center mb-8">
-        <h2 className="text-4xl font-extrabold text-white drop-shadow-lg tracking-wide">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-lg tracking-wide">
           Google Meet Clone
         </h2>
-        <p className="text-purple-200 text-lg mt-2">
+        <p className="text-purple-200 text-base sm:text-lg mt-1 sm:mt-2">
           A simple clone of Google Meet for video conferencing.
         </p>
       </div>
 
       {/* Glassy Card */}
-      <div className="p-8 rounded-2xl shadow-2xl w-96 backdrop-blur-md bg-purple-500/20 border border-purple-400/30">
-        <h1 className="text-2xl font-bold mb-4 text-white drop-shadow-sm">
+      <div className="p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-sm sm:w-96 backdrop-blur-md bg-purple-500/20 border border-purple-400/30">
+        <h1 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white drop-shadow-sm">
           Welcome to the Room
         </h1>
-        <p className="text-purple-100 mb-6">User Email: {user?.email}</p>
+        <p className="text-purple-100 mb-5 sm:mb-6 text-sm sm:text-base truncate">
+          User Email: {user?.email}
+        </p>
 
         {/* Create Room Button */}
         <button
           onClick={handleCreateRoom}
-          className="w-full py-3 rounded-lg font-semibold bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 text-white shadow-lg hover:scale-105 transition-transform duration-200"
+          className="w-full py-3 rounded-lg font-semibold bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 text-white shadow-lg hover:scale-105 transition-transform duration-200 text-sm sm:text-base"
         >
           Create New Room
         </button>
 
         {/* Join Room Section */}
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4 text-white drop-shadow-sm">
+        <div className="mt-6 sm:mt-8">
+          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-white drop-shadow-sm">
             Join a Room
           </h2>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-3">
             <input
               ref={roomInputRef}
               type="text"
               placeholder="Enter Room Code"
-              className="p-3 rounded-lg bg-white/90 text-purple-700 w-full outline-none focus:ring-2 focus:ring-purple-400"
+              className="p-3 rounded-lg bg-white/90 text-purple-700 w-full sm:flex-1 outline-none focus:ring-2 focus:ring-purple-400 text-sm sm:text-base"
             />
             <button
               onClick={() => {
                 const roomCode = roomInputRef.current?.value;
-                if (roomCode) {
-                  router.push(`/room/${roomCode}`);
-                }
+                if (roomCode) router.push(`/room/${roomCode}`);
               }}
-              className="px-5 py-3 rounded-lg font-semibold bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg hover:scale-105 transition-transform duration-200"
+              className="w-full sm:w-auto px-5 py-3 rounded-lg font-semibold bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg hover:scale-105 transition-transform duration-200 text-sm sm:text-base"
             >
               Join
             </button>
