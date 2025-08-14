@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -20,6 +20,7 @@ const Room = () => {
   // Use the useSession hook to get session data and status
   const { data: session, status } = useSession();
   const router = useRouter();
+  const roomInputRef = useRef<HTMLInputElement>(null);
 
   // Show a loading state while the session is being fetched
   if (status === "loading") {
@@ -66,6 +67,29 @@ const Room = () => {
         >
           Create New Room
         </button>
+
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4 text-white">Join a Room</h2>
+          <div className="flex items-center gap-4">
+            <input
+              ref={roomInputRef}
+              type="text"
+              placeholder="Enter Room Code"
+              className="p-2 rounded-lg bg-white text-purple-500 w-full"
+            />
+            <button
+              onClick={() => {
+                const roomCode = roomInputRef.current?.value;
+                if (roomCode) {
+                  router.push(`/room/${roomCode}`);
+                }
+              }}
+              className="bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-purple-600 transition-colors duration-200"
+            >
+              Join Room
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

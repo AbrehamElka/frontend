@@ -28,7 +28,7 @@ const Room = () => {
   const user = session?.user;
 
   const handleCopy = async () => {
-    const roomUrl = `${window.location.origin}/room/${roomId}`;
+    const roomUrl = `${roomId}`;
 
     try {
       await navigator.clipboard.writeText(roomUrl);
@@ -324,9 +324,7 @@ const Room = () => {
         <div className="bg-gray-800 p-4 rounded-xl shadow-inner border border-gray-700">
           <p className="text-gray-400 font-medium">Room ID</p>
           <div className="flex items-center gap-2">
-            <span className="text-purple-300 font-bold text-lg">
-              {window.location.origin}/room/{roomId || "N/A"}
-            </span>
+            <span className="text-purple-300 font-bold text-lg">{roomId}</span>
             <button
               onClick={handleCopy}
               className="p-2 rounded-full bg-purple-700 hover:bg-purple-600 transition-colors duration-200"
