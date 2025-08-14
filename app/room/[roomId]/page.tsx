@@ -311,71 +311,88 @@ const Room = () => {
   }
 
   return (
-    <div className="bg-gray-950 min-h-screen text-white p-4 sm:p-8 flex flex-col items-center justify-center font-sans antialiased">
-      <div className="max-w-5xl w-full mx-auto p-6 bg-gray-900 rounded-3xl shadow-2xl ring-2 ring-purple-600/50">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-fuchsia-600 mb-2">
-            Video Call
-          </h1>
-          <p className="text-gray-400 text-lg">
-            A seamless connection, in style.
-          </p>
-          <div className="mt-4 space-y-2">
-            <div
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-                isSocketConnected
-                  ? "bg-green-500/20 text-green-400"
-                  : "bg-red-500/20 text-red-400"
-              }`}
-            >
-              <div
-                className={`w-2 h-2 rounded-full mr-2 ${
-                  isSocketConnected ? "bg-green-400" : "bg-red-400"
-                }`}
-              ></div>
-              Socket: {isSocketConnected ? "Connected" : "Disconnected"}
-            </div>
-            <div
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-                isLocalVideoReady
-                  ? "bg-green-500/20 text-green-400"
-                  : "bg-yellow-500/20 text-yellow-400"
-              }`}
-            >
-              <div
-                className={`w-2 h-2 rounded-full mr-2 ${
-                  isLocalVideoReady ? "bg-green-400" : "bg-yellow-400"
-                }`}
-              ></div>
-              Local Video: {isLocalVideoReady ? "Ready" : "Loading..."}
-            </div>
-            <div
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-                isRemoteVideoReady
-                  ? "bg-green-500/20 text-green-400"
-                  : "bg-gray-500/20 text-gray-400"
-              }`}
-            >
-              <div
-                className={`w-2 h-2 rounded-full mr-2 ${
-                  isRemoteVideoReady ? "bg-green-400" : "bg-gray-400"
-                }`}
-              ></div>
-              Remote Video: {isRemoteVideoReady ? "Connected" : "Waiting..."}
-            </div>
-          </div>
-        </div>
+    <div className="bg-gray-950 min-h-screen text-white flex flex-col font-sans antialiased">
+      {/* Page Title */}
+      <h1 className="text-center text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 py-6 drop-shadow-lg">
+        Google Meet Clone
+      </h1>
 
-        <div className="bg-gray-800 p-4 rounded-xl shadow-inner border border-gray-700">
-          <p className="text-gray-400 font-medium">Room ID</p>
-          <div className="flex items-center gap-2">
-            <span className="text-purple-300 font-bold text-lg">{roomId}</span>
+      {/* Video Container */}
+      <div className="relative flex-1 flex items-center justify-center bg-black p-6">
+        {/* Remote Video */}
+        <div className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="w-full h-full object-cover rounded-2xl"
+          />
+          {!isRemoteVideoReady && (
+            <div className="absolute inset-0 bg-gray-900 flex items-center justify-center text-gray-500 text-lg rounded-2xl">
+              Waiting for remote video...
+            </div>
+          )}
+
+          {/* Local Video Overlay */}
+          <div className="absolute bottom-4 right-4 w-48 aspect-video rounded-xl overflow-hidden shadow-lg border-2 border-purple-500/70">
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover"
+            />
+            {!isLocalVideoReady && (
+              <div className="absolute inset-0 bg-gray-800 flex items-center justify-center text-gray-400 text-sm">
+                Loading...
+              </div>
+            )}
+          </div>
+
+          {/* Floating Control Buttons (Top Center) */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4 bg-black/40 backdrop-blur-md p-3 rounded-full shadow-lg">
+            <button
+              onClick={handleEndCall}
+              className="p-4 bg-red-600 rounded-full text-white shadow-lg hover:scale-110 hover:bg-red-700 transition-all duration-200"
+              aria-label="End Call"
+            >
+              <PhoneOff size={22} />
+            </button>
+            <button
+              onClick={handleMute}
+              className={`p-4 rounded-full text-white shadow-lg hover:scale-110 transition-all duration-200 ${
+                isMuted
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-700 hover:bg-gray-800"
+              }`}
+              aria-label={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
+            </button>
+            <button
+              onClick={handleToggleCamera}
+              className={`p-4 rounded-full text-white shadow-lg hover:scale-110 transition-all duration-200 ${
+                isCameraOff
+                  ? "bg-purple-600 hover:bg-purple-700"
+                  : "bg-gray-700 hover:bg-gray-800"
+              }`}
+              aria-label={isCameraOff ? "Turn camera on" : "Turn camera off"}
+            >
+              {isCameraOff ? <VideoOff size={22} /> : <Video size={22} />}
+            </button>
+          </div>
+
+          {/* Room Info (Bottom Center Overlay) */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full shadow-lg">
+            <span className="text-purple-300 font-bold text-lg">
+              Room: {roomId}
+            </span>
             <button
               onClick={handleCopy}
               className="p-2 rounded-full bg-purple-700 hover:bg-purple-600 transition-colors duration-200"
               aria-label="Copy room URL"
             >
-              <Copy size={20} className="text-white" />
+              <Copy size={18} className="text-white" />
             </button>
             {isCopied && (
               <span className="text-green-400 text-sm font-semibold">
@@ -383,82 +400,6 @@ const Room = () => {
               </span>
             )}
           </div>
-        </div>
-
-        {/* Video grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          {/* Local Video */}
-          <div className="flex flex-col items-center">
-            <h3 className="text-xl font-bold mb-2 text-purple-300">
-              Your Video
-            </h3>
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl">
-              <video
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover"
-              />
-              {!isLocalVideoReady && (
-                <div className="absolute inset-0 bg-gray-800 flex items-center justify-center text-gray-500 text-lg">
-                  Loading Local Video...
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Remote Video */}
-          <div className="flex flex-col items-center">
-            <h3 className="text-xl font-bold mb-2 text-purple-300">
-              Remote Video
-            </h3>
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl">
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              {!isRemoteVideoReady && (
-                <div className="absolute inset-0 bg-gray-800 flex items-center justify-center text-gray-500 text-lg">
-                  Loading Remote Video...
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-center gap-6 items-center mt-8">
-          <button
-            onClick={handleEndCall}
-            className="p-4 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors duration-200"
-            aria-label="End Call"
-          >
-            <PhoneOff size={24} />
-          </button>
-          <button
-            onClick={handleMute}
-            className={`p-4 rounded-full text-white shadow-lg transition-colors duration-200 ${
-              isMuted
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-600 hover:bg-gray-700"
-            }`}
-            aria-label={isMuted ? "Unmute" : "Mute"}
-          >
-            {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-          </button>
-          <button
-            onClick={handleToggleCamera}
-            className={`p-4 rounded-full text-white shadow-lg transition-colors duration-200 ${
-              isCameraOff
-                ? "bg-purple-600 hover:bg-purple-700"
-                : "bg-gray-600 hover:bg-gray-700"
-            }`}
-            aria-label={isCameraOff ? "Turn camera on" : "Turn camera off"}
-          >
-            {isCameraOff ? <VideoOff size={24} /> : <Video size={24} />}
-          </button>
         </div>
       </div>
     </div>
