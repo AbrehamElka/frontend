@@ -29,6 +29,8 @@ const Room = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
 
+  const [remotePersonName, setRemotePersonName] = useState("");
+
   const user = session?.user;
 
   const handleCopy = async () => {
@@ -229,6 +231,7 @@ const Room = () => {
       userId: string;
     }) => {
       console.log("[Socket] User joined:", data);
+      setRemotePersonName(data.userId);
       await startCall(data.socketId);
     };
 
@@ -311,24 +314,24 @@ const Room = () => {
   }
 
   return (
-    <div className="min-h-screen text-white flex flex-col font-sans bg-cover bg-center bg-no-repeat bg-[url('/background.jpg')]">
+    <div className="min-h-screen text-white flex flex-col font-sans bg-cover bg-center bg-no-repeat bg-[url('/background.jpg')] bg-fixed">
       {/* Page Title */}
       <h1 className="text-center text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 py-6 drop-shadow-lg">
         Google Meet Clone
       </h1>
 
-      {/* Video Container */}
       <div className="relative flex-1 flex items-center justify-center  p-6">
         {/* Remote Video */}
-        <div className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
+
+        <div className="relative w-full max-w-5xl aspect-video rounded-2xl overflow-hidden shadow-2xl">
           <video
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="w-full h-full object-cover rounded-2xl"
+            className="w-full h-full object-cover rounded-2xl "
           />
           {!isRemoteVideoReady && (
-            <div className="absolute inset-0 bg-gray-900 flex items-center justify-center text-gray-500 text-lg rounded-2xl">
+            <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-lg rounded-2xl bg-gray-900/50 backdrop-blur-sm">
               Waiting for remote video...
             </div>
           )}
@@ -347,6 +350,13 @@ const Room = () => {
                 Loading...
               </div>
             )}
+          </div>
+
+          {/* Name tag */}
+          <div className="absolute top-8 left-8 bg-black/50 backdrop-blur-md px-4 py-2 rounded-lg shadow-lg border border-purple-500/50">
+            <span className="text-white font-semibold text-lg tracking-wide">
+              {remotePersonName ? remotePersonName : "Name"}
+            </span>
           </div>
 
           {/* Floating Control Buttons (Top Center) */}
@@ -385,7 +395,7 @@ const Room = () => {
           {/* Room Info (Bottom Center Overlay) */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full shadow-lg">
             <span className="text-purple-300 font-bold text-lg">
-              Room: {roomId}
+              Code: {roomId}
             </span>
             <button
               onClick={handleCopy}
