@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import socket from "@/lib/socket";
 import { useSession } from "next-auth/react";
-import { Copy } from "lucide-react";
+import { Copy, PhoneOff, Mic, MicOff, Video, VideoOff } from "lucide-react";
 
 const pcConfig: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -24,6 +24,9 @@ const Room = () => {
   const [isLocalVideoReady, setIsLocalVideoReady] = useState(false);
   const [isRemoteVideoReady, setIsRemoteVideoReady] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
 
   const user = session?.user;
 
@@ -45,6 +48,27 @@ const Room = () => {
       document.body.removeChild(tempTextArea);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleMute = () => {
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !isMuted;
+        setIsMuted(!isMuted);
+      }
+    }
+  };
+
+  // Function to handle turning the camera on/off
+  const handleToggleCamera = () => {
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !isCameraOff;
+        setIsCameraOff(!isCameraOff);
+      }
     }
   };
 
@@ -382,6 +406,38 @@ const Room = () => {
               )}
             </div>
           </div>
+        </div>
+
+        <div className="flex justify-center gap-6 items-center mt-8">
+          <button
+            onClick={() => console.log("End Call")} // Placeholder for end call logic
+            className="p-4 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors duration-200"
+            aria-label="End Call"
+          >
+            <PhoneOff size={24} />
+          </button>
+          <button
+            onClick={handleMute}
+            className={`p-4 rounded-full text-white shadow-lg transition-colors duration-200 ${
+              isMuted
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-gray-600 hover:bg-gray-700"
+            }`}
+            aria-label={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+          </button>
+          <button
+            onClick={handleToggleCamera}
+            className={`p-4 rounded-full text-white shadow-lg transition-colors duration-200 ${
+              isCameraOff
+                ? "bg-purple-600 hover:bg-purple-700"
+                : "bg-gray-600 hover:bg-gray-700"
+            }`}
+            aria-label={isCameraOff ? "Turn camera on" : "Turn camera off"}
+          >
+            {isCameraOff ? <VideoOff size={24} /> : <Video size={24} />}
+          </button>
         </div>
       </div>
     </div>
