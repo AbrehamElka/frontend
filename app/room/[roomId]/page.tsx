@@ -142,7 +142,7 @@ const Room = () => {
 
   // Start a call
   const startCall = useCallback(
-    async (targetSocketId: string) => {
+    async (targetSocketId: string, userName: string | null | undefined) => {
       if (!localStreamRef.current) {
         console.error("Local stream not ready");
         return;
@@ -167,7 +167,9 @@ const Room = () => {
         offer,
         senderSocketId: socket.id,
         roomName: roomId,
+        userName,
       });
+      console.log("I am calling", userName);
     },
     [bindPeerEvents, roomId]
   );
@@ -240,20 +242,46 @@ const Room = () => {
       socketId: string;
       userId: string;
     }) => {
+      if (!session?.user) return;
       console.log("[Socket] User joined:", data);
       setRemotePersonName(data.userId);
-      await startCall(data.socketId);
+      await startCall(data.socketId, session.user.name);
     };
 
     const handleOffer = async ({
       offer,
       senderSocketId,
+      senderUserName,
     }: {
       offer: RTCSessionDescriptionInit;
       senderSocketId: string;
+      senderUserName: string;
     }) => {
-      console.log("[Socket] Received offer from:", senderSocketId);
+      console.log(
+        "[Socket] Received offer from:",
+        senderSocketId,
+        "by",
+        senderUserName
+      );
+      setRemotePersonName(senderUserName);
       await createAnswer(offer, senderSocketId);
+    };
+
+    const handleExistingUsers = (
+      users: { socketId: string; userName: string }[]
+    ) => {
+      console.log("[Socket] Existing users:", users);
+      // The new client receives this list and can set the remote name.
+      if (users.length > 0) {
+        // Find the first user that is not the current user
+        setRemotePersonName(users[0].userName);
+      }
+    };
+
+    const handleUserLeft = (data: { socketId: string; userId: string }) => {
+      console.log("[Socket] User left:", data);
+      // Clear remote person name when the other user leaves
+      setRemotePersonName("");
     };
 
     const handleAnswer = async ({
@@ -290,30 +318,45 @@ const Room = () => {
 
     socket.on("connect", handleConnect);
     socket.on("user-joined", handleUserJoined);
+    socket.on("user-left", handleUserLeft);
     socket.on("offer", handleOffer);
     socket.on("answer", handleAnswer);
     socket.on("ice-candidate", handleIceCandidate);
+    socket.on("existing-users", handleExistingUsers);
 
     return () => {
       socket.off("connect", handleConnect);
       socket.off("user-joined", handleUserJoined);
+      socket.off("user-left", handleUserLeft);
       socket.off("offer", handleOffer);
       socket.off("answer", handleAnswer);
       socket.off("ice-candidate", handleIceCandidate);
+      socket.off("existing-users", handleExistingUsers);
       socket.disconnect();
     };
   }, [startCall, createAnswer]);
 
   // Join room when socket is ready
+  // Join room safely when session and socket are ready
   useEffect(() => {
-    if (roomId && isSocketConnected) {
-      console.log("[Room] Joining room:", roomId, "with user:", user?.name);
-      socket.emit("join-room", {
+    if (!session?.user || !roomId || !isSocketConnected) return;
+
+    const userName = session.user.name;
+    console.log("[Room] Joining room:", roomId, "with user:", userName);
+
+    socket.emit("join-room", {
+      roomId,
+      userId: userName,
+    });
+
+    // Cleanup: leave room when component unmounts
+    return () => {
+      socket.emit("leave-room", {
         roomId,
-        userId: user?.name,
+        userId: userName,
       });
-    }
-  }, [roomId, isSocketConnected, user?.name]);
+    };
+  }, [session?.user, roomId, isSocketConnected]);
 
   if (!session) {
     return (
@@ -325,11 +368,6 @@ const Room = () => {
 
   return (
     <div className="min-h-screen text-white flex flex-col font-sans bg-cover bg-center bg-no-repeat bg-[url('/background.jpg')] bg-fixed px-2 sm:px-6">
-      {/* Page Title */}
-      <h1 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 py-4 sm:py-6 drop-shadow-lg">
-        Google Meet Clone
-      </h1>
-
       <div className="relative flex-1 flex items-center justify-center p-2 sm:p-6">
         {/* Remote Video */}
         <div className="relative w-full max-w-5xl h-[600px] sm:h-[500px] md:h-[600px] rounded-2xl overflow-hidden shadow-2xl">
