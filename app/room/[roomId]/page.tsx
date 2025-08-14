@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import socket from "@/lib/socket";
 import { useSession } from "next-auth/react";
 import { Copy, PhoneOff, Mic, MicOff, Video, VideoOff } from "lucide-react";
@@ -12,6 +12,7 @@ const pcConfig: RTCConfiguration = {
 
 const Room = () => {
   const { roomId } = useParams();
+  const router = useRouter();
   const { data: session } = useSession();
 
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -66,11 +67,31 @@ const Room = () => {
     if (localStreamRef.current) {
       const videoTrack = localStreamRef.current.getVideoTracks()[0];
       if (videoTrack) {
-        videoTrack.enabled = !isCameraOff;
+        videoTrack.enabled = isCameraOff;
         setIsCameraOff(!isCameraOff);
       }
     }
   };
+
+  const handleEndCall = useCallback(() => {
+    console.log("Ending call...");
+
+    // Stop all media tracks to turn off the camera and microphone
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
+    }
+
+    // Close the peer connection
+    if (peerRef.current) {
+      peerRef.current.close();
+    }
+
+    // Disconnect from the socket server
+    socket.disconnect();
+
+    // Navigate back to the home page
+    router.push("/room");
+  }, [router]);
 
   // Bind peer events
   const bindPeerEvents = useCallback((targetSocketId: string) => {
@@ -410,7 +431,7 @@ const Room = () => {
 
         <div className="flex justify-center gap-6 items-center mt-8">
           <button
-            onClick={() => console.log("End Call")} // Placeholder for end call logic
+            onClick={handleEndCall}
             className="p-4 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors duration-200"
             aria-label="End Call"
           >
