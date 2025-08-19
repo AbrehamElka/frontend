@@ -291,11 +291,13 @@ const Room = () => {
     ) => {
       console.log("[Socket] Existing users:", users);
       if (!session?.user?.name) return;
-
+      console.log("session exists");
       if (users.length > 0) {
+        console.log("users are more than two");
         const targetUser = users.find((user) => user.socketId !== socket.id);
 
         if (targetUser) {
+          console.log("target has been found", targetUser);
           setRemotePersonName(targetUser.userName);
 
           // "Designated Caller" logic
