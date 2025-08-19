@@ -254,12 +254,17 @@ const Room = () => {
 
     const handleUserJoined = async (data: {
       socketId: string;
-      userId: string;
+      userName: string;
     }) => {
       if (!session?.user) return;
       console.log("[Socket] User joined:", data);
-      setRemotePersonName(data.userId);
-      await startCall(data.socketId, session.user.name);
+      setRemotePersonName(data.userName);
+
+      // NEW LOGIC: "Designated Caller"
+      // Only start the call if our socket ID is lexicographically smaller than the other's.
+      if (socket.id! < data.socketId) {
+        await startCall(data.socketId, session.user.name);
+      }
     };
 
     const handleOffer = async ({
@@ -281,14 +286,25 @@ const Room = () => {
       await createAnswer(offer, senderSocketId);
     };
 
-    const handleExistingUsers = (
+    const handleExistingUsers = async (
       users: { socketId: string; userName: string }[]
     ) => {
       console.log("[Socket] Existing users:", users);
-      // The new client receives this list and can set the remote name.
+      if (!session?.user) return;
+
       if (users.length > 0) {
-        // Find the first user that is not the current user
-        setRemotePersonName(users[0].userName);
+        const targetUser = users[0];
+        setRemotePersonName(targetUser.userName);
+
+        // NEW LOGIC: "Designated Caller"
+        // Only start the call if our socket ID is lexicographically smaller than the other's.
+        if (socket.id! < targetUser.socketId) {
+          console.log(
+            "[Call] Found existing user. Starting call with:",
+            targetUser.socketId
+          );
+          await startCall(targetUser.socketId, session.user.name);
+        }
       }
     };
 
@@ -360,14 +376,14 @@ const Room = () => {
 
     socket.emit("join-room", {
       roomId,
-      userId: userName,
+      userName: userName,
     });
 
     // Cleanup: leave room when component unmounts
     return () => {
       socket.emit("leave-room", {
         roomId,
-        userId: userName,
+        userName: userName,
       });
     };
   }, [session?.user, roomId, isSocketConnected]);
