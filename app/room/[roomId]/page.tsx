@@ -290,8 +290,7 @@ const Room = () => {
       users: { socketId: string; userName: string }[]
     ) => {
       console.log("[Socket] Existing users:", users);
-      if (!session?.user?.name) return;
-      console.log("session exists");
+
       if (users.length > 0) {
         console.log("users are more than two");
         const targetUser = users.find((user) => user.socketId !== socket.id);
@@ -306,7 +305,7 @@ const Room = () => {
               "[Call] Found existing user. Starting call with:",
               targetUser.socketId
             );
-            await startCall(targetUser.socketId, session.user.name);
+            await startCall(targetUser.socketId, session?.user?.name);
           }
         }
       }
