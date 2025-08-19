@@ -293,17 +293,19 @@ const Room = () => {
       if (!session?.user) return;
 
       if (users.length > 0) {
-        const targetUser = users[0];
-        setRemotePersonName(targetUser.userName);
+        const targetUser = users.find((user) => user.socketId !== socket.id);
+        if (targetUser) {
+          setRemotePersonName(targetUser.userName);
+        }
 
         // NEW LOGIC: "Designated Caller"
         // Only start the call if our socket ID is lexicographically smaller than the other's.
-        if (socket.id! < targetUser.socketId) {
+        if (socket.id! < targetUser!.socketId) {
           console.log(
             "[Call] Found existing user. Starting call with:",
-            targetUser.socketId
+            targetUser!.socketId
           );
-          await startCall(targetUser.socketId, session.user.name);
+          await startCall(targetUser!.socketId, session.user.name);
         }
       }
     };
