@@ -154,10 +154,17 @@ const Room = () => {
       if (!peerRef.current) {
         peerRef.current = new RTCPeerConnection(pcConfig);
         bindPeerEvents(targetSocketId);
-        localStreamRef.current.getTracks().forEach((track) => {
-          peerRef.current!.addTrack(track, localStreamRef.current!);
-        });
       }
+
+      // Always ensure tracks are added
+      localStreamRef.current.getTracks().forEach((track) => {
+        const alreadyAdded = peerRef.current
+          ?.getSenders()
+          .some((sender) => sender.track === track);
+        if (!alreadyAdded) {
+          peerRef.current?.addTrack(track, localStreamRef.current!);
+        }
+      });
 
       const offer = await peerRef.current.createOffer();
       await peerRef.current.setLocalDescription(offer);
@@ -188,10 +195,17 @@ const Room = () => {
       if (!peerRef.current) {
         peerRef.current = new RTCPeerConnection(pcConfig);
         bindPeerEvents(senderSocketId);
-        localStreamRef.current.getTracks().forEach((track) => {
-          peerRef.current!.addTrack(track, localStreamRef.current!);
-        });
       }
+
+      // Always ensure tracks are added
+      localStreamRef.current.getTracks().forEach((track) => {
+        const alreadyAdded = peerRef.current
+          ?.getSenders()
+          .some((sender) => sender.track === track);
+        if (!alreadyAdded) {
+          peerRef.current?.addTrack(track, localStreamRef.current!);
+        }
+      });
 
       await peerRef.current.setRemoteDescription(
         new RTCSessionDescription(offer)
